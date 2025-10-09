@@ -110,39 +110,6 @@ const ActualBuildingVisualizer = ({ floors, onRoomClick }: ActualBuildingVisuali
 
   }, [floors]);
 
-  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!onRoomClick || floors.length === 0) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = (event.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (event.clientY - rect.top) * (canvas.height / rect.height);
-
-    const buildingWidth = canvas.width * 0.8;
-    const buildingHeight = canvas.height * 0.8;
-    const startX = (canvas.width - buildingWidth) / 2;
-    const startY = 60;
-    const floorHeight = buildingHeight / floors.length;
-    const maxRoomsPerFloor = Math.max(...floors.map(f => f.rooms.length));
-
-    floors.forEach((floor) => {
-      const floorY = startY + (floors.length - floor.number) * floorHeight;
-      const roomWidth = buildingWidth / maxRoomsPerFloor;
-
-      floor.rooms.forEach((room, roomIndex) => {
-        const roomX = startX + roomIndex * roomWidth;
-        const padding = 8;
-
-        if (x >= roomX + padding && x <= roomX + roomWidth - padding &&
-            y >= floorY + padding && y <= floorY + floorHeight - padding) {
-          onRoomClick(floor.id, room.id);
-        }
-      });
-    });
-  };
-
   if (floors.length === 0) {
     return (
       <Card className="p-8 text-center">
@@ -168,8 +135,7 @@ const ActualBuildingVisualizer = ({ floors, onRoomClick }: ActualBuildingVisuali
           ref={canvasRef}
           width={800}
           height={600}
-          className="w-full h-auto cursor-pointer"
-          onClick={handleCanvasClick}
+          className="w-full h-auto"
         />
       </Card>
 

@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [userType, setUserType] = useState("student");
   const [formData, setFormData] = useState({
@@ -27,9 +27,28 @@ const Auth = () => {
   };
 
   const handleSubmit = () => {
-    login();
-    // Always redirect back to homepage after login/register
-    navigate('/');
+    if (isLogin) {
+      // Login flow
+      const success = login(formData.username, formData.password);
+      if (success) {
+        navigate('/');
+      } else {
+        alert('Invalid username or password');
+      }
+    } else {
+      // Registration flow
+      const userData = {
+        id: Date.now().toString(),
+        fullName: formData.fullName,
+        email: formData.email,
+        username: formData.username,
+        phone: formData.phone,
+        role: userType as 'student' | 'owner'
+      };
+      
+      register(userData);
+      navigate('/');
+    }
   };
 
   return (

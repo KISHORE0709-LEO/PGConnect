@@ -135,7 +135,7 @@ const OwnerPGDashboard = () => {
       {/* Header */}
       <header className="bg-card border-b sticky top-0 z-50 backdrop-blur-lg bg-card/95">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate('/owner')}>
+          <Button variant="ghost" onClick={() => navigate('/')}>
             <ArrowLeft className="h-5 w-5 mr-2" />
             Back to Dashboard
           </Button>
