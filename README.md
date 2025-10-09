@@ -46,4 +46,4 @@ npm run build
 
 ## License
 
-MIT License
+MIT License# PGConnect
