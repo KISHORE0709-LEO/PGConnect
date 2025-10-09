@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, ArrowRight, CheckCircle2, Upload, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,7 @@ import FlexibleBuildingConfig from "@/components/FlexibleBuildingConfig";
 
 const RegisterPG = () => {
   const navigate = useNavigate();
+  const { setPGRegistrationSuccess } = useAuth();
   const [step, setStep] = useState(1);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showBuildingConfig, setShowBuildingConfig] = useState(false);
@@ -93,8 +95,8 @@ const RegisterPG = () => {
 
   const handleBuildingConfigSubmit = () => {
     toast.success("Building configuration saved!");
-    // Navigate to owner dashboard with the new PG
-    navigate('/owner/pg/1'); // In real app, this would be the actual PG ID
+    // Navigate to existing owner PG dashboard
+    navigate('/owner/pg/1');
   };
 
   return (

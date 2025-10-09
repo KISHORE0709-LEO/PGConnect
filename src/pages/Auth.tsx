@@ -4,8 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Check, Search } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Check, Search, ArrowLeft } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
 const Auth = () => {
@@ -28,42 +28,23 @@ const Auth = () => {
 
   const handleSubmit = () => {
     login();
-    const urlParams = new URLSearchParams(window.location.search);
-    const role = urlParams.get('role') || userType;
-    
-    if (role === 'student') {
-      navigate('/student');
-    } else if (role === 'owner') {
-      // For new owners, redirect to register PG page
-      if (!isLogin) {
-        navigate('/owner/register-pg');
-      } else {
-        // For existing owners, go to dashboard
-        navigate('/owner');
-      }
-    } else {
-      navigate('/');
-    }
+    // Always redirect back to homepage after login/register
+    navigate('/');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
-      <header className="bg-white border-b px-4 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-primary">PGConnect</h1>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm">
-              <Search className="h-4 w-4 mr-2" />
-              Find PG
-            </Button>
-            <Button variant="ghost" size="sm">Login</Button>
-            <Button size="sm">Sign Up</Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex min-h-[calc(100vh-80px)]">
+      {/* Back to Home */}
+      <div className="absolute top-4 left-4 z-10">
+        <Link to="/">
+          <Button variant="ghost" size="sm" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            <span className="font-bold text-primary">PGConnect</span>
+          </Button>
+        </Link>
+      </div>
+      
+      <div className="flex min-h-screen">
         {/* Left Side - Form */}
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full max-w-md">

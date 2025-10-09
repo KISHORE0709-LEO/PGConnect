@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Building2, Users, Shield, Sparkles } from "lucide-react";
+import { Building2, Users, Shield, Sparkles, X, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import heroBg from "@/assets/hero-bg-realistic.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, showSuccessMessage, showPGSuccessMessage, dismissSuccessMessage, dismissPGSuccessMessage } = useAuth();
 
   const handleOwnerClick = () => {
     if (isAuthenticated) {
@@ -25,13 +25,43 @@ const Index = () => {
     }
   };
 
+  const handleDismissSuccess = () => {
+    dismissSuccessMessage();
+  };
+
+  const handleDismissPGSuccess = () => {
+    dismissPGSuccessMessage();
+  };
+
   return (
     <div className="min-h-screen">
+      {/* Login Success Message */}
+      {showSuccessMessage && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-top duration-300">
+          <CheckCircle className="h-5 w-5" />
+          <span className="font-medium">Successfully logged in! Welcome to PGConnect.</span>
+          <button onClick={handleDismissSuccess} className="ml-2 hover:bg-white/20 rounded-full p-1 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+      
+      {/* PG Registration Success Message */}
+      {showPGSuccessMessage && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-blue-600 to-teal-600 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-top duration-300">
+          <CheckCircle className="h-5 w-5" />
+          <span className="font-medium">You have successfully registered your PG!</span>
+          <button onClick={handleDismissPGSuccess} className="ml-2 hover:bg-white/20 rounded-full p-1 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+      
       {/* Hero Section */}
       <section 
-        className="relative h-screen flex items-center justify-center overflow-hidden"
+        className="relative min-h-screen flex items-center justify-center overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.6)), url(${heroBg})`,
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url(${heroBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -69,7 +99,7 @@ const Index = () => {
                 </p>
               </div>
               <Button className="w-full" size="lg">
-                Launch PG
+                {isAuthenticated ? "Go to Dashboard" : "Launch PG"}
               </Button>
             </Card>
 
@@ -88,7 +118,7 @@ const Index = () => {
                 </p>
               </div>
               <Button className="w-full" size="lg">
-                Search PGs
+                {isAuthenticated ? "Browse PGs" : "Join as Student"}
               </Button>
             </Card>
           </div>
