@@ -1,0 +1,6 @@
+pgName,address,pgType,description,totalRooms,monthlyRent,nearestCollege,distanceKm,amenities,gateOpenTime,gateCloseTime,smokingAllowed,drinkingAllowed,availableNow
+Serov House,"Yelahanka, Near NMIT",Female,Safe and secure PG for female students,20,9000,NMIT,5.0,"Food,Wi-Fi,Laundry,Security",06:00,22:00,false,false,true
+Albury House,"Yelahanka, Near NMIT",Male,Comfortable PG for male students,25,8500,NMIT,5.5,"Food,Wi-Fi,Laundry",06:00,22:00,false,false,true
+Shanmuka PG,"Yelahanka, Near BMSIT",Male,Premium PG with modern amenities,15,12500,BMSIT,1.0,"Food,Wi-Fi,Laundry,AC,Gym",06:00,23:00,false,false,true
+S V PG For Men,"Rajarajeshwari Nagar",Male,Budget-friendly PG near RNSIT,30,7000,RNSIT,2.0,"Meals,Wi-Fi,Laundry",06:00,21:30,false,false,true
+SLN Grand PG,"Bala Nagar, Hyderabad",Male,Luxury PG near GITAM,18,11500,GITAM,6.5,"Meals,Wi-Fi,Laundry,AC",06:00,22:30,false,false,true

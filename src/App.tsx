@@ -3,27 +3,23 @@ import { AuthProvider } from "./context/AuthContext";
 import Index from "./pages/Index";
 import StudentDashboard from "./pages/StudentDashboard";
 import PGDetails from "./pages/PGDetails";
+import OwnerDashboard from "./pages/OwnerDashboard";
 import OwnerPGDashboard from "./pages/OwnerPGDashboard";
+import ImportData from "./pages/ImportData";
 import RegisterPG from "./pages/RegisterPG";
 import NotFound from "./pages/NotFound";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
-
-// Student Pages
 import HowToBook from "./pages/HowToBook";
 import SafetyGuidelines from "./pages/SafetyGuidelines";
 import FAQs from "./pages/FAQs";
 import StudentInsurance from "./pages/StudentInsurance";
-
-// Owner Pages
 import ListYourProperty from "./pages/ListYourProperty";
 import OwnerGuidelines from "./pages/OwnerGuidelines";
 import CommissionStructure from "./pages/CommissionStructure";
 import SuccessStories from "./pages/SuccessStories";
-
-// Support Pages
 import ContactUs from "./pages/ContactUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -42,13 +38,7 @@ const App = () => (
               <Footer />
             </>
           } />
-          <Route path="/auth" element={
-            <>
-              <Navbar />
-              <div className="flex-1"><Auth /></div>
-              <Footer />
-            </>
-          } />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/student-dashboard" element={
             <>
               <Navbar />
@@ -59,7 +49,7 @@ const App = () => (
           <Route path="/owner-dashboard" element={
             <>
               <Navbar />
-              <div className="flex-1"><OwnerPGDashboard /></div>
+              <div className="flex-1"><OwnerDashboard /></div>
               <Footer />
             </>
           } />
@@ -175,6 +165,7 @@ const App = () => (
               <Footer />
             </>
           } />
+          <Route path="/import-data" element={<ImportData />} />
           <Route path="*" element={
             <>
               <Navbar />

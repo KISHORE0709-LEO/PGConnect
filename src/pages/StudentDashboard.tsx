@@ -85,45 +85,54 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [pgs, setPgs] = useState(mockPGs);
+  const [allPgs, setAllPgs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPGs = async () => {
       try {
-        const response = await fetch('/api/pgs');
-        if (response.ok) {
-          const data = await response.json();
+        // Fetch from Firebase
+        const { db } = await import('@/config/firebase');
+        const { collection, getDocs } = await import('firebase/firestore');
+        
+        const querySnapshot = await getDocs(collection(db, 'pgs'));
+        const firebasePGs = [];
+        
+        console.log('Firebase query result:', querySnapshot.size, 'documents found');
+        
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          console.log('PG document:', doc.id, data);
           
-          // Transform backend data to match frontend format
-          const transformedPGs = data.map((pg, index) => {
-            const images = [
-              "https://via.placeholder.com/400x300/4F46E5/FFFFFF?text=PG+1",
-              "https://via.placeholder.com/400x300/059669/FFFFFF?text=PG+2", 
-              "https://via.placeholder.com/400x300/DC2626/FFFFFF?text=PG+3",
-              "https://via.placeholder.com/400x300/7C3AED/FFFFFF?text=PG+4",
-              "https://via.placeholder.com/400x300/EA580C/FFFFFF?text=PG+5"
-            ];
-            
-            return {
-              id: pg.id,
-              name: pg.name,
-              location: pg.address,
-              price: pg.rent_amount || 8500,
-              sharing: "2-3 Sharing", // Default
-              gender: "Any", // Default
-              rating: 4.5, // Default
-              amenities: pg.amenities || ["WiFi"],
-              availability: pg.available_rooms,
-              image: images[index % images.length]
-            };
+          const images = [
+            "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400",
+            "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400", 
+            "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400",
+            "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400",
+            "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400"
+          ];
+          
+          firebasePGs.push({
+            id: doc.id,
+            name: data.name,
+            location: data.address,
+            price: data.monthlyRent || 8500,
+            sharing: "2-3 Sharing",
+            gender: data.pgType || "Any",
+            rating: 4.5,
+            amenities: data.amenities || ["WiFi"],
+            availability: data.availableRooms || data.totalRooms || 1,
+            image: images[firebasePGs.length % images.length]
           });
-          
-          if (transformedPGs.length > 0) {
-            setPgs([...transformedPGs, ...mockPGs]); // Show real PGs first, then mock data
-          }
-        }
+        });
+        
+        console.log('Processed Firebase PGs:', firebasePGs);
+        
+        const combinedPGs = [...firebasePGs, ...mockPGs];
+        setAllPgs(combinedPGs);
+        setPgs(combinedPGs);
       } catch (error) {
-        console.error('Error fetching PGs:', error);
+        console.error('Error fetching PGs from Firebase:', error);
       } finally {
         setLoading(false);
       }
@@ -176,6 +185,53 @@ const StudentDashboard = () => {
     );
   };
 
+  const handleSearch = () => {
+    let filtered = allPgs;
+
+    // Filter by college
+    if (college) {
+      filtered = filtered.filter(pg => 
+        pg.nearestCollege?.toLowerCase().includes(college.toLowerCase())
+      );
+    }
+
+    // Filter by distance
+    if (distance) {
+      filtered = filtered.filter(pg => pg.distance <= parseFloat(distance));
+    }
+
+    // Filter by gender
+    if (gender && gender !== 'any') {
+      filtered = filtered.filter(pg => 
+        pg.gender?.toLowerCase() === gender || pg.gender?.toLowerCase() === 'any'
+      );
+    }
+
+    // Filter by sharing type
+    if (sharingType.length > 0) {
+      filtered = filtered.filter(pg => 
+        sharingType.some(sharing => pg.sharing?.includes(sharing))
+      );
+    }
+
+    // Filter by price range
+    if (minPrice) {
+      filtered = filtered.filter(pg => pg.price >= parseInt(minPrice));
+    }
+    if (maxPrice) {
+      filtered = filtered.filter(pg => pg.price <= parseInt(maxPrice));
+    }
+
+    // Filter by amenities
+    if (amenities.length > 0) {
+      filtered = filtered.filter(pg => 
+        amenities.every(amenity => pg.amenities.includes(amenity))
+      );
+    }
+
+    setPgs(filtered);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       {/* Header */}
@@ -199,20 +255,16 @@ const StudentDashboard = () => {
               <h2 className="text-xl font-bold mb-6">Find PGs Near Your College</h2>
               
               <div className="space-y-6">
-                {/* Location */}
+                {/* Find PGs Near Your College */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">Location</Label>
+                  <Label className="text-sm font-medium mb-2 block">Find PGs Near Your College</Label>
+                  <div className="text-xs text-gray-500 mb-2">Location</div>
                   <Select value={college} onValueChange={setCollege}>
                     <SelectTrigger>
                       <SelectValue placeholder="NMIT" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="nmit">NMIT</SelectItem>
-                      <SelectItem value="rvce">RVCE</SelectItem>
-                      <SelectItem value="pesit">PESIT</SelectItem>
-                      <SelectItem value="christ">Christ University</SelectItem>
-                      <SelectItem value="iit">IIT Bangalore</SelectItem>
-                      <SelectItem value="iisc">IISc Bangalore</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -232,14 +284,14 @@ const StudentDashboard = () => {
                 <div>
                   <Label className="text-sm font-medium mb-3 block">Gender</Label>
                   <div className="space-y-2">
-                    {['male', 'female', 'any'].map((g) => (
-                      <div key={g} className="flex items-center space-x-2">
+                    {[{value: 'male', label: 'male'}, {value: 'female', label: 'female'}, {value: 'any', label: 'any'}].map((g) => (
+                      <div key={g.value} className="flex items-center space-x-2">
                         <Checkbox
-                          id={g}
-                          checked={gender === g}
-                          onCheckedChange={() => setGender(g)}
+                          id={g.value}
+                          checked={gender === g.value}
+                          onCheckedChange={() => setGender(g.value)}
                         />
-                        <Label htmlFor={g} className="capitalize cursor-pointer">{g}</Label>
+                        <Label htmlFor={g.value} className="cursor-pointer">{g.label}</Label>
                       </div>
                     ))}
                   </div>
@@ -278,7 +330,7 @@ const StudentDashboard = () => {
                   <div className="space-y-2">
                     {[
                       'WiFi',
-                      'Power Backup',
+                      'Power Backup', 
                       'Food Included',
                       'Attached Bathroom',
                       'AC',
@@ -314,7 +366,7 @@ const StudentDashboard = () => {
                 </div>
 
                 {/* Search Button */}
-                <Button size="lg" className="w-full">
+                <Button size="lg" className="w-full" onClick={handleSearch}>
                   <Search className="h-4 w-4 mr-2" />
                   Search PGs
                 </Button>

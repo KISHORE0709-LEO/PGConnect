@@ -1,0 +1,5 @@
+fullName,email,username,phoneNumber,role
+John Student,john@student.com,john_student,9876543210,student
+Sarah Student,sarah@student.com,sarah_student,9876543211,student
+Mike Owner,mike@owner.com,mike_owner,9876543212,owner
+Lisa Owner,lisa@owner.com,lisa_owner,9876543213,owner

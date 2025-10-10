@@ -8,13 +8,9 @@ import ProfileDropdown from "./ProfileDropdown";
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
   const handleLogin = () => {
-    navigate("/auth");
-  };
-
-  const handleRegister = () => {
     navigate("/auth");
   };
 
@@ -31,30 +27,25 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            {isAuthenticated ? (
+            {loading ? (
+              <div className="w-24 h-10 animate-pulse bg-white/20 rounded"></div>
+            ) : isAuthenticated ? (
               <ProfileDropdown />
             ) : (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleLogin}
-                  className="border-white text-white hover:bg-white hover:text-black transition-all duration-300 bg-transparent"
-                >
-                  Login
-                </Button>
-                <Button
-                  onClick={handleRegister}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transition-all duration-300 shadow-lg hover:shadow-xl"
-                >
-                  Register
-                </Button>
-              </>
+              <Button
+                onClick={handleLogin}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
+                Get started
+              </Button>
             )}
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden">
-            {isAuthenticated ? (
+            {loading ? (
+              <div className="w-10 h-10 animate-pulse bg-white/20 rounded"></div>
+            ) : isAuthenticated ? (
               <ProfileDropdown />
             ) : (
               <Button
@@ -62,6 +53,7 @@ const Navbar = () => {
                 size="sm"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="p-2 text-white hover:bg-white/20"
+                aria-label={isMenuOpen ? "Close menu" : "Open menu"}
               >
                 {isMenuOpen ? (
                   <X className="h-6 w-6" />
@@ -78,17 +70,10 @@ const Navbar = () => {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-black/80 backdrop-blur-md rounded-lg mt-2 shadow-lg">
               <Button
-                variant="outline"
                 onClick={handleLogin}
-                className="w-full justify-center border-white text-white hover:bg-white hover:text-black transition-all duration-300 bg-transparent"
-              >
-                Login
-              </Button>
-              <Button
-                onClick={handleRegister}
                 className="w-full justify-center bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transition-all duration-300"
               >
-                Register
+                Get started
               </Button>
             </div>
           </div>

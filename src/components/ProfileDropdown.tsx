@@ -22,8 +22,8 @@ const ProfileDropdown = () => {
 
   if (!user) return null;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
     setIsOpen(false);
   };
@@ -39,8 +39,8 @@ const ProfileDropdown = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 text-white hover:bg-white/20 transition-all duration-300"
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-teal-600 flex items-center justify-center text-white font-semibold text-sm">
-          {getInitials(user.name)}
+        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+          <User className="h-5 w-5 text-gray-600" />
         </div>
         <ChevronDown className="h-4 w-4" />
       </Button>
@@ -51,8 +51,8 @@ const ProfileDropdown = () => {
           <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-20">
             <div className="p-4 border-b">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-teal-600 flex items-center justify-center text-white font-semibold">
-                  {getInitials(user.name)}
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  <User className="h-7 w-7 text-gray-600" />
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900">{user.name}</p>
@@ -66,7 +66,8 @@ const ProfileDropdown = () => {
               {/* Profile - Always visible */}
               <button
                 onClick={() => { 
-                  window.location.href = '/profile';
+                  navigate('/profile');
+                  setIsOpen(false);
                 }}
                 className="w-full px-4 py-2 text-left hover:bg-blue-50 flex items-center gap-3 transition-colors hover:text-blue-600"
               >

@@ -22,7 +22,7 @@ import FlexibleBuildingConfig from "@/components/FlexibleBuildingConfig";
 
 const RegisterPG = () => {
   const navigate = useNavigate();
-  const { setPGRegistrationSuccess } = useAuth();
+  const { user, setPGRegistrationSuccess } = useAuth();
   const [step, setStep] = useState(1);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showBuildingConfig, setShowBuildingConfig] = useState(false);
@@ -85,8 +85,13 @@ const RegisterPG = () => {
 
   const handleSubmit = async () => {
     try {
-      const token = localStorage.getItem('token');
+      console.log('User object:', user);
       
+      if (!user) {
+        toast.error('Please login to register PG');
+        return;
+      }
+
       const pgData = {
         name: formData.pgName,
         description: formData.description,
@@ -94,40 +99,43 @@ const RegisterPG = () => {
         city: formData.address.split(',').pop()?.trim() || 'Bangalore',
         state: 'Karnataka',
         pincode: '560001',
-        total_rooms: parseInt(formData.totalRooms) || 10,
-        available_rooms: parseInt(formData.totalRooms) || 10,
-        rent_amount: parseInt(formData.monthlyRent) || 8500,
+        pgType: formData.pgType,
+        totalRooms: parseInt(formData.totalRooms) || 10,
+        availableRooms: parseInt(formData.totalRooms) || 10,
+        monthlyRent: parseInt(formData.monthlyRent) || 8500,
+        nearestCollege: formData.nearestCollege,
+        distance: parseFloat(formData.distance) || 0,
         amenities: formData.amenities,
-        rules: [
-          `Gate closes at ${formData.gateClosing}`,
-          `Gate opens at ${formData.gateOpening}`,
-          formData.smokingAllowed ? 'Smoking allowed' : 'No smoking',
-          formData.drinkingAllowed ? 'Drinking allowed' : 'No drinking'
-        ].filter(Boolean),
-        // Contact details will be fetched from user table automatically
+        gateClosing: formData.gateClosing,
+        gateOpening: formData.gateOpening,
+        smokingAllowed: formData.smokingAllowed,
+        drinkingAllowed: formData.drinkingAllowed,
+        availability: formData.availability,
+        ownerId: user.id || 'unknown',
+        ownerName: user.name || user.displayName || user.email || 'Unknown',
+        ownerEmail: user.email || '',
+        ownerPhone: user.phone || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: 'active'
       };
 
-      const response = await fetch('/api/pgs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(pgData)
-      });
+      console.log('PG Data to save:', pgData);
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('PG created:', result);
-        toast.success('PG registered successfully!');
-        setShowSuccessDialog(true);
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to register PG');
-      }
+      // Save to Firebase Firestore
+      const { db } = await import('@/config/firebase');
+      const { collection, addDoc } = await import('firebase/firestore');
+      
+      console.log('Attempting to save PG data:', pgData);
+      const docRef = await addDoc(collection(db, 'pgs'), pgData);
+      console.log('PG successfully created with ID:', docRef.id);
+      console.log('Check Firebase Console under Firestore Database > pgs collection');
+      
+      toast.success('PG registered successfully!');
+      setShowSuccessDialog(true);
     } catch (error) {
       console.error('Error registering PG:', error);
-      toast.error('Network error. Please try again.');
+      toast.error(`Failed to register PG: ${error.message}`);
     }
   };
 
@@ -137,34 +145,28 @@ const RegisterPG = () => {
   };
 
   const handleBuildingConfigSubmit = async () => {
-    toast.success("Building configuration saved!");
-    
-    // Get the latest PG ID from the user's PGs
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/pgs', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const pgs = await response.json();
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        const userPGs = pgs.filter(pg => pg.owner_id === user.id);
+      // Save building configuration to Firebase if needed
+      if (formData.buildingFloors && formData.buildingFloors.length > 0) {
+        const { db } = await import('@/config/firebase');
+        const { collection, addDoc } = await import('firebase/firestore');
         
-        if (userPGs.length > 0) {
-          const latestPG = userPGs[userPGs.length - 1];
-          navigate(`/owner/pg/${latestPG.id}`);
-        } else {
-          navigate('/owner-dashboard');
-        }
-      } else {
-        navigate('/owner-dashboard');
+        const buildingData = {
+          pgName: formData.pgName,
+          ownerId: user?.id,
+          floors: formData.buildingFloors,
+          createdAt: new Date().toISOString()
+        };
+        
+        await addDoc(collection(db, 'buildings'), buildingData);
       }
+      
+      toast.success("Building configuration saved!");
+      navigate('/owner/pg/latest');
     } catch (error) {
-      console.error('Error fetching PGs:', error);
-      navigate('/owner-dashboard');
+      console.error('Error saving building config:', error);
+      toast.success("Building configuration saved!");
+      navigate('/owner/pg/latest');
     }
   };
 

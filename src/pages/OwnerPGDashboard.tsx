@@ -2,97 +2,56 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { 
   ArrowLeft, 
-  Building2,
-  Users,
+  Edit, 
+  Upload, 
+  Eye,
+  Calendar,
+  MapPin,
   IndianRupee,
-  Phone,
-  Mail,
-  AlertCircle,
-  CheckCircle2,
-  Search
+  Users,
+  Wifi,
+  Car,
+  Utensils,
+  Shield,
+  Zap,
+  Shirt,
+  Wind,
+  Camera
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
-import ActualBuildingVisualizer from "@/components/ActualBuildingVisualizer";
-
-// Mock tenant data
-const mockTenants = [
-  {
-    id: 1,
-    name: "Amit Sharma",
-    room: 301,
-    floor: 3,
-    phone: "+91 98765 43211",
-    email: "amit@example.com",
-    rentPaid: true,
-    rentAmount: 8500,
-    joinDate: "2024-08-15"
-  },
-  {
-    id: 2,
-    name: "Priya Patel",
-    room: 302,
-    floor: 3,
-    phone: "+91 98765 43212",
-    email: "priya@example.com",
-    rentPaid: true,
-    rentAmount: 8500,
-    joinDate: "2024-09-01"
-  },
-  {
-    id: 3,
-    name: "Rahul Singh",
-    room: 201,
-    floor: 2,
-    phone: "+91 98765 43213",
-    email: "rahul@example.com",
-    rentPaid: false,
-    rentAmount: 8500,
-    joinDate: "2024-07-20"
-  },
-  {
-    id: 4,
-    name: "Sneha Kumar",
-    room: 202,
-    floor: 2,
-    phone: "+91 98765 43214",
-    email: "sneha@example.com",
-    rentPaid: true,
-    rentAmount: 8500,
-    joinDate: "2024-08-10"
-  },
-  {
-    id: 5,
-    name: "Vikram Reddy",
-    room: 101,
-    floor: 1,
-    phone: "+91 98765 43215",
-    email: "vikram@example.com",
-    rentPaid: false,
-    rentAmount: 8500,
-    joinDate: "2024-09-15"
-  }
-];
+import { useAuth } from "@/context/AuthContext";
 
 const OwnerPGDashboard = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { pgId } = useParams();
+  const { user } = useAuth();
   const [pgData, setPgData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Mock room data for visualization
+  const mockRooms = Array.from({ length: 12 }, (_, i) => ({
+    id: i + 1,
+    number: `R${String(i + 1).padStart(2, '0')}`,
+    floor: Math.floor(i / 4) + 1,
+    status: Math.random() > 0.3 ? 'occupied' : 'available',
+    tenant: Math.random() > 0.3 ? `Tenant ${i + 1}` : null
+  }));
 
   useEffect(() => {
     const fetchPGData = async () => {
       try {
-        const response = await fetch(`/api/pgs/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setPgData(data);
-        } else {
-          console.error('Failed to fetch PG data');
+        // Fetch from Firebase
+        const { db } = await import('@/config/firebase');
+        const { collection, query, where, getDocs } = await import('firebase/firestore');
+        
+        const q = query(collection(db, 'pgs'), where('ownerId', '==', user?.id));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const pgDoc = querySnapshot.docs[0];
+          setPgData({ id: pgDoc.id, ...pgDoc.data() });
         }
       } catch (error) {
         console.error('Error fetching PG data:', error);
@@ -101,261 +60,241 @@ const OwnerPGDashboard = () => {
       }
     };
 
-    if (id) {
+    if (user) {
       fetchPGData();
     }
-  }, [id]);
+  }, [user, pgId]);
 
-  // Sample building configuration from owner's setup
-  const buildingConfig = [
-    {
-      id: "1",
-      number: 1,
-      rooms: [
-        { id: "101", number: "101", sharing: 1, rent: 15000, isOccupied: false },
-        { id: "102", number: "102", sharing: 1, rent: 15000, isOccupied: true },
-        { id: "103", number: "103", sharing: 2, rent: 10000, isOccupied: false },
-        { id: "104", number: "104", sharing: 2, rent: 10000, isOccupied: true }
-      ]
-    },
-    {
-      id: "2",
-      number: 2,
-      rooms: [
-        { id: "201", number: "201", sharing: 4, rent: 7000, isOccupied: true },
-        { id: "202", number: "202", sharing: 4, rent: 7000, isOccupied: false },
-        { id: "203", number: "203", sharing: 2, rent: 9000, isOccupied: true }
-      ]
-    },
-    {
-      id: "3",
-      number: 3,
-      rooms: [
-        { id: "301", number: "301", sharing: 1, rent: 12000, isOccupied: false },
-        { id: "302", number: "302", sharing: 3, rent: 8000, isOccupied: true }
-      ]
-    }
-  ];
-
-  // Use real PG data or fallback to mock data
-  const displayPgData = pgData || {
-    name: "Green Valley PG",
-    address: "Jayanagar, Bangalore",
-    total_rooms: buildingConfig.reduce((sum, floor) => sum + floor.rooms.length, 0),
-    available_rooms: buildingConfig.reduce((sum, floor) => 
-      sum + floor.rooms.filter(room => !room.isOccupied).length, 0
-    )
+  const getAmenityIcon = (amenity) => {
+    const icons = {
+      'WiFi': Wifi,
+      'Parking': Car,
+      'Food Included': Utensils,
+      'CCTV': Shield,
+      'Power Backup': Zap,
+      'Laundry': Shirt,
+      'AC': Wind,
+      'Attached Bathroom': Camera
+    };
+    return icons[amenity] || Shield;
   };
 
-  const occupiedRooms = displayPgData.total_rooms - displayPgData.available_rooms;
-  const floors = Math.ceil(displayPgData.total_rooms / 4); // Estimate floors
-
-  const pendingTenants = mockTenants.filter(t => !t.rentPaid);
-  const paidTenants = mockTenants.filter(t => t.rentPaid);
-
-  const handleCall = (phone: string) => {
-    window.location.href = `tel:${phone}`;
+  const getRoomColor = (status) => {
+    return status === 'occupied' ? 'bg-red-500' : 'bg-green-500';
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading PG details...</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
+
+  if (!pgData) {
+    return <div className="min-h-screen flex items-center justify-center">PG not found</div>;
+  }
+
+  const occupiedRooms = mockRooms.filter(room => room.status === 'occupied').length;
+  const availableRooms = mockRooms.length - occupiedRooms;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       {/* Header */}
       <header className="bg-card border-b sticky top-0 z-50 backdrop-blur-lg bg-card/95">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate('/')}>
+          <Button variant="ghost" onClick={() => navigate('/owner-dashboard')}>
             <ArrowLeft className="h-5 w-5 mr-2" />
             Back to Dashboard
           </Button>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">PG<span className="text-primary">Connect</span></h1>
-            <Badge variant="secondary">Owner</Badge>
+          <div className="flex items-center gap-3">
+            <Button variant="outline">
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Listing
+            </Button>
+            <Button variant="outline">
+              <Upload className="h-4 w-4 mr-2" />
+              Add Media
+            </Button>
+            <Button>
+              <Eye className="h-4 w-4 mr-2" />
+              Preview Public
+            </Button>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* PG Header */}
-        <div className="mb-8">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">{displayPgData.name}</h1>
-              <p className="text-muted-foreground">{displayPgData.address}</p>
-            </div>
-            <Badge variant="outline" className="text-lg py-2 px-4">
-              <Building2 className="h-5 w-5 mr-2" />
-              {floors} Floors
-            </Badge>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <Users className="h-5 w-5 text-muted-foreground" />
-              <Badge className="bg-success">{Math.round((occupiedRooms / displayPgData.total_rooms) * 100)}%</Badge>
-            </div>
-            <h3 className="text-2xl font-bold mb-1">{occupiedRooms}/{displayPgData.total_rooms}</h3>
-            <p className="text-sm text-muted-foreground">Rooms Occupied</p>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <CheckCircle2 className="h-5 w-5 text-success" />
-            </div>
-            <h3 className="text-2xl font-bold mb-1 text-success">{paidTenants.length}</h3>
-            <p className="text-sm text-muted-foreground">Paid This Month</p>
-          </Card>
-
-          <Card className="p-6 border-destructive/50">
-            <div className="flex items-center justify-between mb-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-              <Badge variant="destructive">{pendingTenants.length}</Badge>
-            </div>
-            <h3 className="text-2xl font-bold mb-1 text-destructive">{pendingTenants.length}</h3>
-            <p className="text-sm text-muted-foreground">Pending Payments</p>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-2">
-              <IndianRupee className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <h3 className="text-2xl font-bold mb-1">₹{(paidTenants.length * 8500).toLocaleString()}</h3>
-            <p className="text-sm text-muted-foreground">Collected</p>
-          </Card>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Building Visualization */}
-          <div>
-            <h2 className="text-2xl font-bold mb-6">Building Layout & Room Status</h2>
-            <ActualBuildingVisualizer 
-              floors={buildingConfig}
-              onRoomClick={(floorId, roomId) => {
-                const floor = buildingConfig.find(f => f.id === floorId);
-                const room = floor?.rooms.find(r => r.id === roomId);
-                if (room) {
-                  toast.info(`Room ${room.number} - ${room.sharing}-sharing - ₹${room.rent}/month`);
-                }
-              }}
-            />
-          </div>
-
-          {/* Tenants List */}
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Tenant Management</h2>
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search tenants..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Pending Payments */}
-            {pendingTenants.length > 0 && (
+        {/* Top Section - PG Details */}
+        <div className="grid lg:grid-cols-3 gap-8 mb-8">
+          {/* Main Info */}
+          <div className="lg:col-span-2">
+            <Card className="p-6">
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3 text-destructive flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5" />
-                  Pending Payments ({pendingTenants.length})
-                </h3>
-                <div className="space-y-3">
-                  {pendingTenants.map((tenant) => (
-                    <Card key={tenant.id} className="p-4 border-destructive/50 bg-destructive/5">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-semibold">{tenant.name}</h4>
-                            <Badge variant="outline" className="text-xs">
-                              Room {tenant.room}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Phone className="h-3 w-3" />
-                              {tenant.phone}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <IndianRupee className="h-3 w-3" />
-                              ₹{tenant.rentAmount.toLocaleString()} pending
-                            </div>
-                          </div>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant="destructive"
-                          onClick={() => handleCall(tenant.phone)}
-                        >
-                          <Phone className="h-4 w-4 mr-2" />
-                          Call Now
-                        </Button>
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h1 className="text-3xl font-bold mb-2">{pgData.name}</h1>
+                    <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>{pgData.address}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Badge variant="secondary">{pgData.pgType} PG</Badge>
+                      <Badge variant="outline">{pgData.nearestCollege} - {pgData.distance}km</Badge>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-primary">₹{pgData.monthlyRent?.toLocaleString()}</div>
+                    <div className="text-sm text-muted-foreground">per month</div>
+                  </div>
+                </div>
+                <p className="text-muted-foreground">{pgData.description}</p>
+              </div>
+
+              {/* Amenities */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Amenities</h3>
+                <div className="flex flex-wrap gap-2">
+                  {pgData.amenities?.map((amenity, index) => {
+                    const IconComponent = getAmenityIcon(amenity);
+                    return (
+                      <div key={index} className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
+                        <IconComponent className="h-4 w-4" />
+                        <span className="text-sm">{amenity}</span>
                       </div>
-                    </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
-            )}
+            </Card>
+          </div>
 
-            {/* Paid Tenants */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3 text-success flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5" />
-                Paid Tenants ({paidTenants.length})
-              </h3>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {paidTenants.map((tenant) => (
-                  <Card key={tenant.id} className="p-4 bg-success/5 border-success/20">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-semibold">{tenant.name}</h4>
-                          <Badge variant="outline" className="text-xs">
-                            Room {tenant.room}
-                          </Badge>
-                          <Badge className="bg-success text-xs">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Paid
-                          </Badge>
-                        </div>
-                        <div className="text-sm text-muted-foreground space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-3 w-3" />
-                            {tenant.phone}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-3 w-3" />
-                            {tenant.email}
-                          </div>
-                        </div>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleCall(tenant.phone)}
-                      >
-                        <Phone className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
+          {/* Side Widgets */}
+          <div className="space-y-6">
+            {/* Room Summary */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Room Summary</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Total Rooms</span>
+                  <span className="font-semibold">{mockRooms.length}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Occupied</span>
+                  <span className="font-semibold text-red-600">{occupiedRooms}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Available</span>
+                  <span className="font-semibold text-green-600">{availableRooms}</span>
+                </div>
+                <div className="pt-2 border-t">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Occupancy Rate</span>
+                    <span className="font-semibold">{Math.round((occupiedRooms / mockRooms.length) * 100)}%</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* House Rules */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">House Rules</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span>Gate Opens</span>
+                  <span className="font-medium">{pgData.gateOpening || '6:00 AM'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Gate Closes</span>
+                  <span className="font-medium">{pgData.gateClosing || '10:00 PM'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Smoking</span>
+                  <Badge variant={pgData.smokingAllowed ? "default" : "secondary"}>
+                    {pgData.smokingAllowed ? 'Allowed' : 'Not Allowed'}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span>Drinking</span>
+                  <Badge variant={pgData.drinkingAllowed ? "default" : "secondary"}>
+                    {pgData.drinkingAllowed ? 'Allowed' : 'Not Allowed'}
+                  </Badge>
+                </div>
+              </div>
+            </Card>
+
+            {/* Status */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Current Status</h3>
+              <div className="text-center">
+                <Badge 
+                  variant={pgData.availability === 'open' ? "default" : "secondary"}
+                  className="text-lg px-4 py-2"
+                >
+                  {pgData.availability === 'open' ? 'Open for Bookings' : 'Closed'}
+                </Badge>
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Interactive Building Diagram */}
+        <Card className="p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Building Layout</h2>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-green-500 rounded"></div>
+                <span className="text-sm">Available</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-red-500 rounded"></div>
+                <span className="text-sm">Occupied</span>
               </div>
             </div>
           </div>
+
+          {/* Room Grid by Floor */}
+          <div className="space-y-8">
+            {[3, 2, 1].map(floor => (
+              <div key={floor} className="border rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-4">Floor {floor}</h3>
+                <div className="grid grid-cols-4 gap-4">
+                  {mockRooms
+                    .filter(room => room.floor === floor)
+                    .map(room => (
+                      <div
+                        key={room.id}
+                        className={`
+                          relative p-4 rounded-lg border-2 cursor-pointer transition-all hover:scale-105
+                          ${getRoomColor(room.status)} text-white
+                        `}
+                        title={room.tenant || 'Available'}
+                      >
+                        <div className="text-center">
+                          <div className="font-bold">{room.number}</div>
+                          <div className="text-xs mt-1">
+                            {room.status === 'occupied' ? 'Occupied' : 'Available'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Action Buttons */}
+        <div className="flex gap-4">
+          <Button size="lg">
+            <Calendar className="h-5 w-5 mr-2" />
+            View Bookings
+          </Button>
+          <Button size="lg" variant="outline">
+            <Users className="h-5 w-5 mr-2" />
+            Manage Tenants
+          </Button>
+          <Button size="lg" variant="outline">
+            <IndianRupee className="h-5 w-5 mr-2" />
+            Payment History
+          </Button>
         </div>
       </div>
     </div>
