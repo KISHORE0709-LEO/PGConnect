@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface User {
-  id: string;
-  fullName: string;
+  id: number;
+  name: string;
   email: string;
-  username: string;
   phone: string;
   role: 'student' | 'owner';
+  created_at?: string;
 }
 
 interface AuthContextType {
@@ -14,8 +14,9 @@ interface AuthContextType {
   user: User | null;
   showSuccessMessage: boolean;
   showPGSuccessMessage: boolean;
-  login: (username: string, password: string) => boolean;
+  login: (email: string, password: string) => boolean;
   register: (userData: User) => void;
+  setAuthenticatedUser: (userData: any) => void;
   logout: () => void;
   dismissSuccessMessage: () => void;
   setPGRegistrationSuccess: () => void;
@@ -31,30 +32,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [showPGSuccessMessage, setShowPGSuccessMessage] = useState(false);
 
   const register = (userData: User) => {
-    // Store user in localStorage
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    users.push(userData);
-    localStorage.setItem('users', JSON.stringify(users));
-    
-    // Auto login after registration
+    // This is now handled by the Auth component
+    // Just update the context state
     setIsAuthenticated(true);
     setUser(userData);
     setShowSuccessMessage(true);
-    localStorage.setItem('currentUser', JSON.stringify(userData));
   };
 
-  const login = (username: string, password: string) => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const foundUser = users.find((u: User) => u.username === username);
-    
-    if (foundUser) {
-      setIsAuthenticated(true);
-      setUser(foundUser);
-      setShowSuccessMessage(true);
-      localStorage.setItem('currentUser', JSON.stringify(foundUser));
-      return true;
-    }
-    return false;
+  const login = (email: string, password: string) => {
+    // This is now handled by the Auth component
+    // Just return true for compatibility
+    return true;
+  };
+
+  const setAuthenticatedUser = (userData: any) => {
+    setIsAuthenticated(true);
+    setUser(userData);
+    setShowSuccessMessage(true);
   };
   
   const logout = () => {
@@ -69,8 +63,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Check for existing session on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
+    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+    if (token && savedUser) {
       const userData = JSON.parse(savedUser);
       setIsAuthenticated(true);
       setUser(userData);
@@ -85,6 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       showPGSuccessMessage, 
       login, 
       register, 
+      setAuthenticatedUser,
       logout, 
       dismissSuccessMessage, 
       setPGRegistrationSuccess, 

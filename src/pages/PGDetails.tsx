@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +51,58 @@ const PGDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [selectedImage, setSelectedImage] = useState(0);
+  const [pgData, setPgData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPGDetails = async () => {
+      try {
+        const response = await fetch(`/api/pgs/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setPgData(data);
+        } else {
+          console.error('Failed to fetch PG details');
+        }
+      } catch (error) {
+        console.error('Error fetching PG details:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchPGDetails();
+    }
+  }, [id]);
+
+  // Use real data or fallback to mock data
+  const displayData = pgData ? {
+    ...pgDetails,
+    id: pgData.id,
+    name: pgData.name,
+    location: pgData.address,
+    price: pgData.rent_amount || pgDetails.price,
+    description: pgData.description || pgDetails.description,
+    amenities: pgData.amenities || pgDetails.amenities,
+    availability: pgData.available_rooms,
+    owner: {
+      name: pgData.owner_name || pgDetails.owner.name,
+      phone: pgData.contact_phone || pgDetails.owner.phone,
+      email: pgData.contact_email || pgDetails.owner.email
+    }
+  } : pgDetails;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading PG details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -76,12 +128,12 @@ const PGDetails = () => {
             <Card className="overflow-hidden">
               <div className="h-96 relative">
                 <img 
-                  src={pgDetails.images[selectedImage]}
-                  alt={pgDetails.name}
+                  src={displayData.images[selectedImage]}
+                  alt={displayData.name}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute bottom-4 left-4 flex gap-2">
-                  {pgDetails.images.map((_, idx) => (
+                  {displayData.images.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setSelectedImage(idx)}
@@ -98,34 +150,34 @@ const PGDetails = () => {
             <Card className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-3xl font-bold mb-2">{pgDetails.name}</h1>
+                  <h1 className="text-3xl font-bold mb-2">{displayData.name}</h1>
                   <div className="flex items-center text-muted-foreground mb-2">
                     <MapPin className="h-4 w-4 mr-1" />
-                    {pgDetails.location}
+                    {displayData.location}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-lg">
                   <Star className="h-5 w-5 fill-primary text-primary" />
-                  <span className="font-bold text-lg">{pgDetails.rating}</span>
-                  <span className="text-sm text-muted-foreground">({pgDetails.reviews})</span>
+                  <span className="font-bold text-lg">{displayData.rating}</span>
+                  <span className="text-sm text-muted-foreground">({displayData.reviews})</span>
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-3 mb-4">
                 <Badge variant="outline" className="text-sm py-1">
                   <Users className="h-4 w-4 mr-1" />
-                  {pgDetails.sharing}
+                  {displayData.sharing}
                 </Badge>
                 <Badge variant="outline" className="text-sm py-1">
-                  {pgDetails.gender}
+                  {displayData.gender}
                 </Badge>
                 <Badge className="bg-success text-sm py-1">
                   <CheckCircle2 className="h-4 w-4 mr-1" />
-                  {pgDetails.availability} rooms available
+                  {displayData.availability} rooms available
                 </Badge>
               </div>
 
-              <p className="text-muted-foreground">{pgDetails.description}</p>
+              <p className="text-muted-foreground">{displayData.description}</p>
             </Card>
 
             {/* Tabs */}
@@ -139,7 +191,7 @@ const PGDetails = () => {
                 <Card className="p-6">
                   <h3 className="text-xl font-bold mb-4">Available Amenities</h3>
                   <div className="grid grid-cols-2 gap-4">
-                    {pgDetails.amenities.map((amenity) => (
+                    {displayData.amenities.map((amenity) => (
                       <div key={amenity} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                           {amenity === "WiFi" && <Wifi className="h-5 w-5 text-primary" />}
@@ -162,8 +214,8 @@ const PGDetails = () => {
                     Interactive 3D view showing room availability across all floors
                   </p>
                   <BuildingVisualizer 
-                    floors={pgDetails.floors} 
-                    roomsPerFloor={pgDetails.roomsPerFloor}
+                    floors={displayData.floors} 
+                    roomsPerFloor={displayData.roomsPerFloor}
                   />
                 </Card>
               </TabsContent>
@@ -176,7 +228,7 @@ const PGDetails = () => {
             <Card className="p-6 sticky top-24">
               <div className="flex items-center text-3xl font-bold text-primary mb-6">
                 <IndianRupee className="h-7 w-7" />
-                {pgDetails.price.toLocaleString()}
+                {displayData.price.toLocaleString()}
                 <span className="text-sm text-muted-foreground font-normal ml-2">/month</span>
               </div>
 
@@ -194,15 +246,15 @@ const PGDetails = () => {
                     <Phone className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">{pgDetails.owner.name}</p>
-                    <p className="text-muted-foreground">{pgDetails.owner.phone}</p>
+                    <p className="font-medium">{displayData.owner.name}</p>
+                    <p className="text-muted-foreground">{displayData.owner.phone}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                     <Mail className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="text-muted-foreground">{pgDetails.owner.email}</p>
+                  <p className="text-muted-foreground">{displayData.owner.email}</p>
                 </div>
               </div>
             </Card>

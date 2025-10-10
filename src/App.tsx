@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
 import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
 
 // Student Pages
 import HowToBook from "./pages/HowToBook";
@@ -32,38 +33,156 @@ const App = () => (
   <AuthProvider>
     <BrowserRouter>
       <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/student" element={<StudentDashboard />} />
-            <Route path="/student/pg/:id" element={<PGDetails />} />
-            <Route path="/owner/register-pg" element={<RegisterPG />} />
-            <Route path="/owner/pg/:id" element={<OwnerPGDashboard />} />
-            
-            {/* Student Pages */}
-            <Route path="/how-to-book" element={<HowToBook />} />
-            <Route path="/safety-guidelines" element={<SafetyGuidelines />} />
-            <Route path="/faqs" element={<FAQs />} />
-            <Route path="/student-insurance" element={<StudentInsurance />} />
-            
-            {/* Owner Pages */}
-            <Route path="/list-your-property" element={<ListYourProperty />} />
-            <Route path="/owner-guidelines" element={<OwnerGuidelines />} />
-            <Route path="/commission-structure" element={<CommissionStructure />} />
-            <Route path="/success-stories" element={<SuccessStories />} />
-            
-            {/* Support Pages */}
-            <Route path="/contact-us" element={<ContactUs />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/refund-policy" element={<RefundPolicy />} />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
-        <Footer />
+        <Routes>
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><Index /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/auth" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><Auth /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/student-dashboard" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><StudentDashboard /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/owner-dashboard" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><OwnerPGDashboard /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/student" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><StudentDashboard /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/student/pg/:id" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><PGDetails /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/owner/register-pg" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><RegisterPG /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/owner/pg/:id" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><OwnerPGDashboard /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/how-to-book" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><HowToBook /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/safety-guidelines" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><SafetyGuidelines /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/faqs" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><FAQs /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/student-insurance" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><StudentInsurance /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/list-your-property" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><ListYourProperty /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/owner-guidelines" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><OwnerGuidelines /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/commission-structure" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><CommissionStructure /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/success-stories" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><SuccessStories /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/contact-us" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><ContactUs /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/privacy-policy" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><PrivacyPolicy /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/terms-of-service" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><TermsOfService /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="/refund-policy" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><RefundPolicy /></div>
+              <Footer />
+            </>
+          } />
+          <Route path="*" element={
+            <>
+              <Navbar />
+              <div className="flex-1"><NotFound /></div>
+              <Footer />
+            </>
+          } />
+        </Routes>
       </div>
     </BrowserRouter>
   </AuthProvider>

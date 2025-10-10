@@ -40,7 +40,7 @@ const ProfileDropdown = () => {
         className="flex items-center gap-2 text-white hover:bg-white/20 transition-all duration-300"
       >
         <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-teal-600 flex items-center justify-center text-white font-semibold text-sm">
-          {getInitials(user.fullName)}
+          {getInitials(user.name)}
         </div>
         <ChevronDown className="h-4 w-4" />
       </Button>
@@ -52,10 +52,10 @@ const ProfileDropdown = () => {
             <div className="p-4 border-b">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-teal-600 flex items-center justify-center text-white font-semibold">
-                  {getInitials(user.fullName)}
+                  {getInitials(user.name)}
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">{user.fullName}</p>
+                  <p className="font-semibold text-gray-900">{user.name}</p>
                   <p className="text-sm text-gray-600">{user.email}</p>
                   <p className="text-sm text-gray-600">{user.phone}</p>
                 </div>
@@ -65,7 +65,9 @@ const ProfileDropdown = () => {
             <div className="py-2">
               {/* Profile - Always visible */}
               <button
-                onClick={() => { navigate('/profile'); setIsOpen(false); }}
+                onClick={() => { 
+                  window.location.href = '/profile';
+                }}
                 className="w-full px-4 py-2 text-left hover:bg-blue-50 flex items-center gap-3 transition-colors hover:text-blue-600"
               >
                 <User className="h-4 w-4 text-gray-500" />

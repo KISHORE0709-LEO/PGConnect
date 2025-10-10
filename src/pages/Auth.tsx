@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { setAuthenticatedUser } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [userType, setUserType] = useState("student");
   const [formData, setFormData] = useState({
@@ -26,28 +26,79 @@ const Auth = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
-    if (isLogin) {
-      // Login flow
-      const success = login(formData.username, formData.password);
-      if (success) {
-        navigate('/');
+  const handleSubmit = async () => {
+    try {
+      if (isLogin) {
+        // Login flow
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+          }),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          
+          // Update AuthContext
+          setAuthenticatedUser(data.user);
+          
+          // Redirect based on user role
+          if (data.user.role === 'owner') {
+            navigate('/owner-dashboard');
+          } else {
+            navigate('/student-dashboard');
+          }
+        } else {
+          alert(data.error || 'Invalid email or password');
+        }
       } else {
-        alert('Invalid username or password');
+        // Registration flow
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            password: formData.password,
+            role: userType,
+          }),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          
+          // Update AuthContext
+          setAuthenticatedUser(data.user);
+          
+          alert('Registration successful!');
+          
+          // Redirect based on user role
+          if (data.user.role === 'owner') {
+            navigate('/owner-dashboard');
+          } else {
+            navigate('/student-dashboard');
+          }
+        } else {
+          alert(data.error || 'Registration failed');
+        }
       }
-    } else {
-      // Registration flow
-      const userData = {
-        id: Date.now().toString(),
-        fullName: formData.fullName,
-        email: formData.email,
-        username: formData.username,
-        phone: formData.phone,
-        role: userType as 'student' | 'owner'
-      };
-      
-      register(userData);
-      navigate('/');
+    } catch (error) {
+      console.error('Auth error:', error);
+      alert('Network error. Please try again.');
     }
   };
 
@@ -93,11 +144,12 @@ const Auth = () => {
 
                   <div className="space-y-4">
                     <div>
-                      <Label>Username</Label>
+                      <Label>Email</Label>
                       <Input
-                        placeholder="Enter your username"
-                        value={formData.username}
-                        onChange={(e) => handleInputChange('username', e.target.value)}
+                        type="email"
+                        placeholder="Enter your email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
                       />
                     </div>
 

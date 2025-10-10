@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -84,6 +84,53 @@ const mockPGs = [
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [pgs, setPgs] = useState(mockPGs);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPGs = async () => {
+      try {
+        const response = await fetch('/api/pgs');
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Transform backend data to match frontend format
+          const transformedPGs = data.map((pg, index) => {
+            const images = [
+              "https://via.placeholder.com/400x300/4F46E5/FFFFFF?text=PG+1",
+              "https://via.placeholder.com/400x300/059669/FFFFFF?text=PG+2", 
+              "https://via.placeholder.com/400x300/DC2626/FFFFFF?text=PG+3",
+              "https://via.placeholder.com/400x300/7C3AED/FFFFFF?text=PG+4",
+              "https://via.placeholder.com/400x300/EA580C/FFFFFF?text=PG+5"
+            ];
+            
+            return {
+              id: pg.id,
+              name: pg.name,
+              location: pg.address,
+              price: pg.rent_amount || 8500,
+              sharing: "2-3 Sharing", // Default
+              gender: "Any", // Default
+              rating: 4.5, // Default
+              amenities: pg.amenities || ["WiFi"],
+              availability: pg.available_rooms,
+              image: images[index % images.length]
+            };
+          });
+          
+          if (transformedPGs.length > 0) {
+            setPgs([...transformedPGs, ...mockPGs]); // Show real PGs first, then mock data
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching PGs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPGs();
+  }, []);
   const [college, setCollege] = useState("");
   const [distance, setDistance] = useState("");
   const [gender, setGender] = useState("any");
@@ -281,12 +328,22 @@ const StudentDashboard = () => {
 
             {/* Results Header */}
             <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Showing {mockPGs.length} properties in Bangalore</h2>
+              <h2 className="text-2xl font-bold mb-2">
+                {loading ? 'Loading...' : `Showing ${pgs.length} properties in Bangalore`}
+              </h2>
             </div>
 
+            {/* Loading State */}
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              </div>
+            )}
+
             {/* PG Cards */}
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {mockPGs.map((pg) => (
+            {!loading && (
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {pgs.map((pg) => (
                 <Card 
                   key={pg.id} 
                   className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group"
@@ -348,8 +405,9 @@ const StudentDashboard = () => {
                     </div>
                   </div>
                 </Card>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

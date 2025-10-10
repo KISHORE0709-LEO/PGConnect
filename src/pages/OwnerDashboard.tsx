@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +49,47 @@ const mockPGs = [
 
 const OwnerDashboard = () => {
   const navigate = useNavigate();
+  const [pgs, setPgs] = useState(mockPGs);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOwnerPGs = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/pgs', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Filter PGs owned by current user
+          const user = JSON.parse(localStorage.getItem('user') || '{}');
+          const ownerPGs = data.filter(pg => pg.owner_id === user.id);
+          
+          if (ownerPGs.length > 0) {
+            setPgs(ownerPGs.map(pg => ({
+              id: pg.id,
+              name: pg.name,
+              location: pg.address,
+              floors: Math.ceil(pg.total_rooms / 4),
+              totalRooms: pg.total_rooms,
+              occupiedRooms: pg.total_rooms - pg.available_rooms,
+              revenue: (pg.total_rooms - pg.available_rooms) * 8500, // Estimate
+              pendingPayments: Math.floor(Math.random() * 3) // Mock for now
+            })));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching PGs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOwnerPGs();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -133,7 +174,7 @@ const OwnerDashboard = () => {
           <h2 className="text-2xl font-bold mb-6">Your Properties</h2>
           
           <div className="grid md:grid-cols-2 gap-6">
-            {mockPGs.map((pg) => (
+            {pgs.map((pg) => (
               <Card 
                 key={pg.id}
                 className="p-6 hover:shadow-xl transition-all duration-300 cursor-pointer group"

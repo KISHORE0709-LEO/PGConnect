@@ -83,9 +83,52 @@ const RegisterPG = () => {
     }
   };
 
-  const handleSubmit = () => {
-    // Show success dialog
-    setShowSuccessDialog(true);
+  const handleSubmit = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const pgData = {
+        name: formData.pgName,
+        description: formData.description,
+        address: formData.address,
+        city: formData.address.split(',').pop()?.trim() || 'Bangalore',
+        state: 'Karnataka',
+        pincode: '560001',
+        total_rooms: parseInt(formData.totalRooms) || 10,
+        available_rooms: parseInt(formData.totalRooms) || 10,
+        rent_amount: parseInt(formData.monthlyRent) || 8500,
+        amenities: formData.amenities,
+        rules: [
+          `Gate closes at ${formData.gateClosing}`,
+          `Gate opens at ${formData.gateOpening}`,
+          formData.smokingAllowed ? 'Smoking allowed' : 'No smoking',
+          formData.drinkingAllowed ? 'Drinking allowed' : 'No drinking'
+        ].filter(Boolean),
+        // Contact details will be fetched from user table automatically
+      };
+
+      const response = await fetch('/api/pgs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(pgData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('PG created:', result);
+        toast.success('PG registered successfully!');
+        setShowSuccessDialog(true);
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to register PG');
+      }
+    } catch (error) {
+      console.error('Error registering PG:', error);
+      toast.error('Network error. Please try again.');
+    }
   };
 
   const handleContinueToBuildingConfig = () => {
@@ -93,10 +136,36 @@ const RegisterPG = () => {
     setShowBuildingConfig(true);
   };
 
-  const handleBuildingConfigSubmit = () => {
+  const handleBuildingConfigSubmit = async () => {
     toast.success("Building configuration saved!");
-    // Navigate to existing owner PG dashboard
-    navigate('/owner/pg/1');
+    
+    // Get the latest PG ID from the user's PGs
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/pgs', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const pgs = await response.json();
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const userPGs = pgs.filter(pg => pg.owner_id === user.id);
+        
+        if (userPGs.length > 0) {
+          const latestPG = userPGs[userPGs.length - 1];
+          navigate(`/owner/pg/${latestPG.id}`);
+        } else {
+          navigate('/owner-dashboard');
+        }
+      } else {
+        navigate('/owner-dashboard');
+      }
+    } catch (error) {
+      console.error('Error fetching PGs:', error);
+      navigate('/owner-dashboard');
+    }
   };
 
   return (

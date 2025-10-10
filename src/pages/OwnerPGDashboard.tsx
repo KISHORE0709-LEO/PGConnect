@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +81,30 @@ const OwnerPGDashboard = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchQuery, setSearchQuery] = useState("");
+  const [pgData, setPgData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPGData = async () => {
+      try {
+        const response = await fetch(`/api/pgs/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setPgData(data);
+        } else {
+          console.error('Failed to fetch PG data');
+        }
+      } catch (error) {
+        console.error('Error fetching PG data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchPGData();
+    }
+  }, [id]);
 
   // Sample building configuration from owner's setup
   const buildingConfig = [
@@ -113,15 +137,18 @@ const OwnerPGDashboard = () => {
     }
   ];
 
-  const pgData = {
+  // Use real PG data or fallback to mock data
+  const displayPgData = pgData || {
     name: "Green Valley PG",
-    location: "Jayanagar, Bangalore",
-    floors: buildingConfig.length,
-    totalRooms: buildingConfig.reduce((sum, floor) => sum + floor.rooms.length, 0),
-    occupiedRooms: buildingConfig.reduce((sum, floor) => 
-      sum + floor.rooms.filter(room => room.isOccupied).length, 0
+    address: "Jayanagar, Bangalore",
+    total_rooms: buildingConfig.reduce((sum, floor) => sum + floor.rooms.length, 0),
+    available_rooms: buildingConfig.reduce((sum, floor) => 
+      sum + floor.rooms.filter(room => !room.isOccupied).length, 0
     )
   };
+
+  const occupiedRooms = displayPgData.total_rooms - displayPgData.available_rooms;
+  const floors = Math.ceil(displayPgData.total_rooms / 4); // Estimate floors
 
   const pendingTenants = mockTenants.filter(t => !t.rentPaid);
   const paidTenants = mockTenants.filter(t => t.rentPaid);
@@ -129,6 +156,17 @@ const OwnerPGDashboard = () => {
   const handleCall = (phone: string) => {
     window.location.href = `tel:${phone}`;
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading PG details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -151,12 +189,12 @@ const OwnerPGDashboard = () => {
         <div className="mb-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{pgData.name}</h1>
-              <p className="text-muted-foreground">{pgData.location}</p>
+              <h1 className="text-3xl font-bold mb-2">{displayPgData.name}</h1>
+              <p className="text-muted-foreground">{displayPgData.address}</p>
             </div>
             <Badge variant="outline" className="text-lg py-2 px-4">
               <Building2 className="h-5 w-5 mr-2" />
-              {pgData.floors} Floors
+              {floors} Floors
             </Badge>
           </div>
         </div>
@@ -166,9 +204,9 @@ const OwnerPGDashboard = () => {
           <Card className="p-6">
             <div className="flex items-center justify-between mb-2">
               <Users className="h-5 w-5 text-muted-foreground" />
-              <Badge className="bg-success">{Math.round((pgData.occupiedRooms / pgData.totalRooms) * 100)}%</Badge>
+              <Badge className="bg-success">{Math.round((occupiedRooms / displayPgData.total_rooms) * 100)}%</Badge>
             </div>
-            <h3 className="text-2xl font-bold mb-1">{pgData.occupiedRooms}/{pgData.totalRooms}</h3>
+            <h3 className="text-2xl font-bold mb-1">{occupiedRooms}/{displayPgData.total_rooms}</h3>
             <p className="text-sm text-muted-foreground">Rooms Occupied</p>
           </Card>
 

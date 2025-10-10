@@ -8,8 +8,9 @@ export default defineConfig(() => ({
     __APP_NAME__: '"PGConnect"'
   },
   server: {
-    host: "::",
+    host: "0.0.0.0",
     port: 8080,
+    // No proxy - direct Google Cloud connection
   },
   plugins: [react()],
   resolve: {

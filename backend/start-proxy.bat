@@ -1,0 +1,3 @@
+@echo off
+echo Starting Cloud SQL Proxy...
+gcloud sql connect pgconnect-db --user=postgres
