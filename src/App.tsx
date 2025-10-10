@@ -53,13 +53,7 @@ const App = () => (
               <Footer />
             </>
           } />
-          <Route path="/student" element={
-            <>
-              <Navbar />
-              <div className="flex-1"><StudentDashboard /></div>
-              <Footer />
-            </>
-          } />
+          <Route path="/student" element={<StudentDashboard />} />
           <Route path="/student/pg/:id" element={
             <>
               <Navbar />
