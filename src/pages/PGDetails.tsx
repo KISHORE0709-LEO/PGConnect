@@ -57,12 +57,20 @@ const PGDetails = () => {
   useEffect(() => {
     const fetchPGDetails = async () => {
       try {
-        const response = await fetch(`/api/pgs/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setPgData(data);
+        const { db } = await import('@/config/firebase');
+        const { collection, doc, getDoc } = await import('firebase/firestore');
+
+        const docRef = doc(db, 'pgs', id);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setPgData({
+            id: docSnap.id,
+            ...data
+          });
         } else {
-          console.error('Failed to fetch PG details');
+          console.error('PG not found');
         }
       } catch (error) {
         console.error('Error fetching PG details:', error);
@@ -81,15 +89,19 @@ const PGDetails = () => {
     ...pgDetails,
     id: pgData.id,
     name: pgData.name,
-    location: pgData.address,
-    price: pgData.rent_amount || pgDetails.price,
-    description: pgData.description || pgDetails.description,
+    location: `${pgData.address}, ${pgData.city}`,
+    price: pgData.monthlyRent || pgDetails.price,
+    sharing: pgData.sharing || pgDetails.sharing,
+    gender: pgData.pgType || pgDetails.gender,
+    rating: pgData.rating || pgDetails.rating,
     amenities: pgData.amenities || pgDetails.amenities,
-    availability: pgData.available_rooms,
+    availability: pgData.availableRooms || pgDetails.availability,
+    description: pgData.description || pgDetails.description,
+    images: pgData.images && pgData.images.length > 0 ? pgData.images : pgDetails.images,
     owner: {
-      name: pgData.owner_name || pgDetails.owner.name,
-      phone: pgData.contact_phone || pgDetails.owner.phone,
-      email: pgData.contact_email || pgDetails.owner.email
+      name: pgData.ownerName || pgDetails.owner.name,
+      phone: pgData.ownerPhone || pgDetails.owner.phone,
+      email: pgData.ownerEmail || pgDetails.owner.email
     }
   } : pgDetails;
 

@@ -3,21 +3,57 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, CheckCircle, AlertCircle } from "lucide-react";
+import { Upload, CheckCircle, AlertCircle, FileText, AlertTriangle } from "lucide-react";
 import { importPGDataFromFile } from "@/utils/importPGData";
+import * as XLSX from 'xlsx';
 
 const ImportData = () => {
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<any>(null);
+  const [preview, setPreview] = useState<any>(null);
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile && (selectedFile.name.endsWith('.csv') || selectedFile.name.endsWith('.xlsx'))) {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile && selectedFile.name.endsWith('.xlsx')) {
       setFile(selectedFile);
       setResult(null);
+      setPreview(null);
     } else {
-      alert('Please select a CSV or Excel file');
+      alert('Please select an Excel (.xlsx) file');
+    }
+  };
+
+  const handlePreview = async () => {
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet);
+
+      if (jsonData.length === 0) {
+        setPreview({ error: 'No data found in the file.' });
+        return;
+      }
+
+      const firstRow = jsonData[0];
+      const requiredColumns = ['PGName', 'Location', 'College', 'Gender', 'DistanceFromCollege', 'Room Types', 'Price (_/month)', 'Amenities', 'Images'];
+      const missingColumns = requiredColumns.filter(col => !(col in firstRow));
+
+      if (missingColumns.length > 0) {
+        setPreview({ error: `Missing required columns: ${missingColumns.join(', ')}. Please ensure your XLSX has columns: ${requiredColumns.join(', ')}.` });
+        return;
+      }
+
+      setPreview({
+        count: jsonData.length,
+        columns: Object.keys(firstRow),
+        sample: { ...firstRow, note: 'First row preview (will be imported as-is with mapping)' }
+      });
+    } catch (error) {
+      setPreview({ error: 'Failed to preview file: ' + (error as Error).message });
     }
   };
 
@@ -28,8 +64,11 @@ const ImportData = () => {
     try {
       const result = await importPGDataFromFile(file);
       setResult(result);
+      if (result.success) {
+        setPreview(null);
+      }
     } catch (error) {
-      setResult({ success: false, error: error.message });
+      setResult({ success: false, error: (error as Error).message });
     } finally {
       setImporting(false);
     }

@@ -29,68 +29,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Mock PG data
-const mockPGs = [
-  {
-    id: 1,
-    name: "Green Valley PG",
-    location: "Jayanagar, Bangalore",
-    price: 8500,
-    sharing: "2-3 Sharing",
-    gender: "Boys",
-    rating: 4.5,
-    amenities: ["WiFi", "Food", "Laundry"],
-    availability: 3,
-    image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400"
-  },
-  {
-    id: 2,
-    name: "Sunrise Residency",
-    location: "Koramangala, Bangalore",
-    price: 10000,
-    sharing: "2 Sharing",
-    gender: "Girls",
-    rating: 4.8,
-    amenities: ["WiFi", "Food", "AC", "Laundry"],
-    availability: 2,
-    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400"
-  },
-  {
-    id: 3,
-    name: "Student Haven",
-    location: "BTM Layout, Bangalore",
-    price: 7000,
-    sharing: "3 Sharing",
-    gender: "Boys",
-    rating: 4.2,
-    amenities: ["WiFi", "Laundry"],
-    availability: 5,
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400"
-  },
-  {
-    id: 4,
-    name: "Elite Homes",
-    location: "Electronic City, Bangalore",
-    price: 9500,
-    sharing: "2 Sharing",
-    gender: "Girls",
-    rating: 4.6,
-    amenities: ["WiFi", "Food", "AC"],
-    availability: 1,
-    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400"
-  }
-];
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [pgs, setPgs] = useState(mockPGs);
+  const [pgs, setPgs] = useState([]);
   const [allPgs, setAllPgs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchPGs = async () => {
       try {
+        setError(null);
         // Fetch from Firebase
         const { db } = await import('@/config/firebase');
         const { collection, getDocs } = await import('firebase/firestore');
@@ -104,7 +54,7 @@ const StudentDashboard = () => {
           const data = doc.data();
           console.log('PG document:', doc.id, data);
           
-          const images = [
+          const placeholderImages = [
             "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400",
             "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400", 
             "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400",
@@ -112,27 +62,58 @@ const StudentDashboard = () => {
             "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400"
           ];
           
-          firebasePGs.push({
-            id: doc.id,
-            name: data.name,
-            location: data.address,
-            price: data.monthlyRent || 8500,
-            sharing: "2-3 Sharing",
-            gender: data.pgType || "Any",
-            rating: 4.5,
-            amenities: data.amenities || ["WiFi"],
-            availability: data.availableRooms || data.totalRooms || 1,
-            image: images[firebasePGs.length % images.length]
+        const genderMap = {
+          'male': 'boys',
+          'female': 'girls',
+          'unisex': 'any'
+        };
+
+        const pgGender = genderMap[(data.pgType || 'any').toLowerCase()] || (data.pgType || 'any').toLowerCase();
+
+        const normalizedAmenities = (data.amenities || ['WiFi']).map(a => {
+          const lower = a.toLowerCase().trim();
+          if (lower === 'wi-fi') return 'WiFi';
+          if (lower === 'food') return 'Food Included';
+          return a.trim();
+        });
+
+        let sharingTypes = [];
+        if (data.sharing) {
+          const parts = data.sharing.split(',').map(p => p.trim().toLowerCase());
+          parts.forEach(part => {
+            if (part.includes('single') || part === 'private') sharingTypes.push('Private');
+            if (part.includes('double') || part.includes('2')) sharingTypes.push('2 Sharing');
+            if (part.includes('triple') || part.includes('3')) sharingTypes.push('3 Sharing');
+            if (part.includes('quad') || part.includes('4') || part.includes('more')) sharingTypes.push('More than 3');
           });
+        }
+        if (sharingTypes.length === 0) sharingTypes = ['2 Sharing'];
+
+        firebasePGs.push({
+          id: doc.id,
+          name: data.name || 'Unnamed PG',
+          location: `${data.address || ''}, Bangalore`,
+          price: data.monthlyRent || 8500,
+          sharing: data.sharing || '2 Sharing',
+          gender: pgGender,
+          rating: data.rating || 4.5,
+          amenities: normalizedAmenities,
+          availability: data.availableRooms || 5,
+          nearestCollege: data.nearestCollege || 'Others',
+          distance: data.distance || 0,
+          sharingTypes,
+          reviews: data.reviews || 28,
+          image: data.images && data.images.length > 0 ? data.images[0] : placeholderImages[Math.floor(Math.random() * placeholderImages.length)]
+        });
         });
         
         console.log('Processed Firebase PGs:', firebasePGs);
         
-        const combinedPGs = [...firebasePGs, ...mockPGs];
-        setAllPgs(combinedPGs);
-        setPgs(combinedPGs);
+        setAllPgs(firebasePGs);
+        setPgs(firebasePGs);
       } catch (error) {
         console.error('Error fetching PGs from Firebase:', error);
+        setError('Failed to load PG data. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -141,6 +122,7 @@ const StudentDashboard = () => {
     fetchPGs();
   }, []);
   const [college, setCollege] = useState("");
+  const [colleges, setColleges] = useState(['NMIT', 'RVCE', 'IISc', 'BMSIT', 'RNSIT', 'GITAM', 'Others']);
   const [distance, setDistance] = useState("");
   const [gender, setGender] = useState("any");
   const [minPrice, setMinPrice] = useState("");
@@ -210,7 +192,7 @@ const StudentDashboard = () => {
     // Filter by sharing type
     if (sharingType.length > 0) {
       filtered = filtered.filter(pg => 
-        sharingType.some(sharing => pg.sharing?.includes(sharing))
+        sharingType.some(sharing => pg.sharingTypes?.includes(sharing))
       );
     }
 
@@ -251,7 +233,7 @@ const StudentDashboard = () => {
         <div className="flex gap-8">
           {/* Sidebar Filters */}
           <div className="w-80 flex-shrink-0">
-            <Card className="p-6 sticky top-24">
+            <Card className="p-6 sticky top-24 overflow-y-auto max-h-[calc(100vh-8rem)]">
               <h2 className="text-xl font-bold mb-6">Find PGs Near Your College</h2>
               
               <div className="space-y-6">
@@ -261,10 +243,14 @@ const StudentDashboard = () => {
                   <div className="text-xs text-gray-500 mb-2">Location</div>
                   <Select value={college} onValueChange={setCollege}>
                     <SelectTrigger>
-                      <SelectValue placeholder="NMIT" />
+                      <SelectValue placeholder="Select College" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="nmit">NMIT</SelectItem>
+                    <SelectContent position="popper" side="bottom" className="z-[100]">
+                      {colleges.map((col) => (
+                        <SelectItem key={col} value={col.toLowerCase()}>
+                          {col}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -284,7 +270,7 @@ const StudentDashboard = () => {
                 <div>
                   <Label className="text-sm font-medium mb-3 block">Gender</Label>
                   <div className="space-y-2">
-                    {[{value: 'male', label: 'male'}, {value: 'female', label: 'female'}, {value: 'any', label: 'any'}].map((g) => (
+                    {[{value: 'boys', label: 'Boys'}, {value: 'girls', label: 'Girls'}, {value: 'any', label: 'Any'}].map((g) => (
                       <div key={g.value} className="flex items-center space-x-2">
                         <Checkbox
                           id={g.value}
@@ -427,6 +413,7 @@ const StudentDashboard = () => {
                     </div>
 
                     <div className="flex items-center gap-4 mb-4 text-sm">
+                      <Badge variant="secondary">{pg.nearestCollege}</Badge>
                       <Badge variant="outline">{pg.gender}</Badge>
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
@@ -458,6 +445,20 @@ const StudentDashboard = () => {
                   </div>
                 </Card>
                 ))}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!loading && pgs.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="text-6xl mb-4">🏠</div>
+                <h3 className="text-xl font-semibold mb-2">No PGs found</h3>
+                <p className="text-muted-foreground mb-4">
+                  Try adjusting your filters to find more options.
+                </p>
+                <Button onClick={() => setPgs(allPgs)}>
+                  Show All PGs
+                </Button>
               </div>
             )}
           </div>
