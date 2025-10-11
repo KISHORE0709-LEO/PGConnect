@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import BuildingVisualizer from "@/components/BuildingVisualizer";
+import PGLocationMap from "@/components/PGLocationMap";
 
 // Mock detailed PG data
 const pgDetails = {
@@ -35,6 +36,8 @@ const pgDetails = {
   description: "Well-maintained PG with all modern amenities. Close to metro station and major IT parks. Includes daily housekeeping and WiFi.",
   floors: 3,
   roomsPerFloor: 4,
+  latitude: 12.9279,
+  longitude: 77.5619,
   owner: {
     name: "Rajesh Kumar",
     phone: "+91 98765 43210",
@@ -98,6 +101,8 @@ const PGDetails = () => {
     availability: pgData.availableRooms || pgDetails.availability,
     description: pgData.description || pgDetails.description,
     images: pgData.images && pgData.images.length > 0 ? pgData.images : pgDetails.images,
+    latitude: pgData.latitude || pgDetails.latitude,
+    longitude: pgData.longitude || pgDetails.longitude,
     owner: {
       name: pgData.ownerName || pgDetails.owner.name,
       phone: pgData.ownerPhone || pgDetails.owner.phone,
@@ -194,9 +199,10 @@ const PGDetails = () => {
 
             {/* Tabs */}
             <Tabs defaultValue="amenities" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="amenities">Amenities</TabsTrigger>
                 <TabsTrigger value="building">Building Layout</TabsTrigger>
+                <TabsTrigger value="location">Location</TabsTrigger>
               </TabsList>
 
               <TabsContent value="amenities">
@@ -228,6 +234,21 @@ const PGDetails = () => {
                   <BuildingVisualizer 
                     floors={displayData.floors} 
                     roomsPerFloor={displayData.roomsPerFloor}
+                  />
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="location">
+                <Card className="p-6">
+                  <h3 className="text-xl font-bold mb-4">PG Location</h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    View exact location and nearby landmarks
+                  </p>
+                  <PGLocationMap 
+                    location={displayData.location}
+                    pgName={displayData.name}
+                    latitude={displayData.latitude}
+                    longitude={displayData.longitude}
                   />
                 </Card>
               </TabsContent>

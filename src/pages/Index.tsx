@@ -61,21 +61,16 @@ const Index = () => {
       <section 
         className="relative min-h-screen flex items-center justify-center overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url(${heroBg})`,
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.6)), url(${heroBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-primary/20 to-transparent" />
         
-        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
-          <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 backdrop-blur-sm border border-primary/20">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-            <span className="text-sm font-medium text-primary-foreground">One platform to manage and book PGs effortlessly</span>
-          </div>
-          
+        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto pt-16">
           <h1 className="text-6xl md:text-7xl font-bold mb-6 text-white tracking-tight">
-            PG<span className="text-primary">Connect</span>
+            PG<span className="text-yellow-400">Connect</span>
           </h1>
           
           <p className="text-xl md:text-2xl mb-12 text-gray-200 max-w-3xl mx-auto">

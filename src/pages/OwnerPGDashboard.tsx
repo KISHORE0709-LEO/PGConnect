@@ -2,10 +2,20 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowLeft, 
-  Edit, 
-  Upload, 
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ArrowLeft,
+  Edit,
+  Upload,
   Eye,
   Calendar,
   MapPin,
@@ -18,10 +28,15 @@ import {
   Zap,
   Shirt,
   Wind,
-  Camera
+  Camera,
+  UserPlus,
+  Building2
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import SimpleBuildingView from "@/components/SimpleBuildingView";
+import { db } from "@/config/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 const OwnerPGDashboard = () => {
   const navigate = useNavigate();
@@ -29,41 +44,121 @@ const OwnerPGDashboard = () => {
   const { user } = useAuth();
   const [pgData, setPgData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [numFloors, setNumFloors] = useState(3);
+  const [roomsPerFloor, setRoomsPerFloor] = useState(4);
+  const [showAddTenantModal, setShowAddTenantModal] = useState(false);
+  const [selectedRoomForTenant, setSelectedRoomForTenant] = useState<string | null>(null);
+  const [creatingRooms, setCreatingRooms] = useState(false);
+  const [buildingConfigured, setBuildingConfigured] = useState(false);
 
-  // Mock room data for visualization
-  const mockRooms = Array.from({ length: 12 }, (_, i) => ({
-    id: i + 1,
-    number: `R${String(i + 1).padStart(2, '0')}`,
-    floor: Math.floor(i / 4) + 1,
-    status: Math.random() > 0.3 ? 'occupied' : 'available',
-    tenant: Math.random() > 0.3 ? `Tenant ${i + 1}` : null
-  }));
+  const createSampleRooms = async () => {
+    if (!pgId) return;
+    setCreatingRooms(true);
+    try {
+      const roomsCollection = collection(db, 'pgs', pgId, 'rooms');
+      const batchPromises = [];
+
+      const sampleTenants = [
+        { name: 'Rahul Sharma', email: 'rahul@example.com', phone: '+91-9876543210', rentStatus: true },
+        { name: 'Vivek Kumar', email: 'vivek@example.com', phone: '+91-9876543211', rentStatus: false },
+        { name: 'Priya Singh', email: 'priya@example.com', phone: '+91-9876543212', rentStatus: true },
+        { name: 'Amit Patel', email: 'amit@example.com', phone: '+91-9876543213', rentStatus: false }
+      ];
+
+      let tenantIndex = 0;
+      for (let floor = 1; floor <= numFloors; floor++) {
+        for (let roomNum = 1; roomNum <= roomsPerFloor; roomNum++) {
+          const roomNo = `R${floor}${String(roomNum).padStart(2, '0')}`;
+          const numOccupants = Math.floor(Math.random() * 3);
+          const occupants = [];
+          
+          for (let i = 0; i < numOccupants && tenantIndex < sampleTenants.length; i++) {
+            occupants.push(sampleTenants[tenantIndex]);
+            tenantIndex++;
+          }
+          
+          batchPromises.push(addDoc(roomsCollection, {
+            roomNo,
+            floorNo: floor,
+            occupants,
+            capacity: 3,
+            createdAt: serverTimestamp()
+          }));
+        }
+      }
+
+      await Promise.all(batchPromises);
+      setShowConfigModal(false);
+      setBuildingConfigured(true);
+    } catch (err) {
+      console.error('Error:', err);
+      alert('Failed to create rooms');
+    } finally {
+      setCreatingRooms(false);
+    }
+  };
 
   useEffect(() => {
     const fetchPGData = async () => {
+      if (!pgId) return;
       try {
         // Fetch from Firebase
         const { db } = await import('@/config/firebase');
-        const { collection, query, where, getDocs } = await import('firebase/firestore');
+        const { doc, getDoc } = await import('firebase/firestore');
         
-        const q = query(collection(db, 'pgs'), where('ownerId', '==', user?.id));
-        const querySnapshot = await getDocs(q);
+        const pgRef = doc(db, 'pgs', pgId);
+        const pgSnap = await getDoc(pgRef);
         
-        if (!querySnapshot.empty) {
-          const pgDoc = querySnapshot.docs[0];
-          setPgData({ id: pgDoc.id, ...pgDoc.data() });
+        if (pgSnap.exists()) {
+          setPgData({ id: pgId, ...pgSnap.data() });
+        } else {
+          // Fallback data if PG not found
+          setPgData({
+            id: pgId,
+            name: "Sample PG for Testing",
+            description: "A comfortable PG with all modern amenities",
+            address: "123 Test Street, Bangalore",
+            pgType: "any",
+            monthlyRent: 12000,
+            nearestCollege: "NMIT",
+            distance: 2.5,
+            amenities: ["WiFi", "AC", "Food Included", "Laundry", "CCTV"],
+            availability: "open",
+            gateOpening: "6:00 AM",
+            gateClosing: "10:00 PM",
+            smokingAllowed: false,
+            drinkingAllowed: false
+          });
         }
       } catch (error) {
         console.error('Error fetching PG data:', error);
+        // Fallback data on error
+        setPgData({
+          id: pgId,
+          name: "Sample PG for Testing",
+          description: "A comfortable PG with all modern amenities",
+          address: "123 Test Street, Bangalore",
+          pgType: "any",
+          monthlyRent: 12000,
+          nearestCollege: "NMIT",
+          distance: 2.5,
+          amenities: ["WiFi", "AC", "Food Included", "Laundry", "CCTV"],
+          availability: "open",
+          gateOpening: "6:00 AM",
+          gateClosing: "10:00 PM",
+          smokingAllowed: false,
+          drinkingAllowed: false
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    if (user) {
+    if (pgId) {
       fetchPGData();
     }
-  }, [user, pgId]);
+  }, [pgId]);
 
   const getAmenityIcon = (amenity) => {
     const icons = {
@@ -79,10 +174,6 @@ const OwnerPGDashboard = () => {
     return icons[amenity] || Shield;
   };
 
-  const getRoomColor = (status) => {
-    return status === 'occupied' ? 'bg-red-500' : 'bg-green-500';
-  };
-
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -91,8 +182,11 @@ const OwnerPGDashboard = () => {
     return <div className="min-h-screen flex items-center justify-center">PG not found</div>;
   }
 
-  const occupiedRooms = mockRooms.filter(room => room.status === 'occupied').length;
-  const availableRooms = mockRooms.length - occupiedRooms;
+  const totalRooms = buildingConfigured ? numFloors * roomsPerFloor : 0;
+  const occupiedRooms = buildingConfigured ? Math.floor(totalRooms * 0.6) : 0;
+  const availableRooms = totalRooms - occupiedRooms;
+
+  const hasNoRooms = !buildingConfigured;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -171,24 +265,65 @@ const OwnerPGDashboard = () => {
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Room Summary</h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Total Rooms</span>
-                  <span className="font-semibold">{mockRooms.length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Occupied</span>
-                  <span className="font-semibold text-red-600">{occupiedRooms}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Available</span>
-                  <span className="font-semibold text-green-600">{availableRooms}</span>
-                </div>
-                <div className="pt-2 border-t">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Occupancy Rate</span>
-                    <span className="font-semibold">{Math.round((occupiedRooms / mockRooms.length) * 100)}%</span>
+                {hasNoRooms ? (
+                  <div className="text-center py-4">
+                    <Building2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground mb-4">No rooms configured yet</p>
+                    <Button onClick={() => setShowConfigModal(true)} className="w-full">
+                      Configure Building Layout
+                    </Button>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Total Rooms</span>
+                      <span className="font-semibold">{totalRooms}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Occupied</span>
+                      <span className="font-semibold text-red-600">{occupiedRooms}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Available</span>
+                      <span className="font-semibold text-green-600">{availableRooms}</span>
+                    </div>
+                    <div className="pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Occupancy Rate</span>
+                        <span className="font-semibold">{totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0}%</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+              <div className="space-y-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => {
+                    if (totalRooms === 0) {
+                      alert('Please configure building layout first');
+                      return;
+                    }
+                    alert('Add tenant functionality - coming soon!');
+                  }}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add New Tenant
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <IndianRupee className="h-4 w-4 mr-2" />
+                  Collect Rent
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  View Schedule
+                </Button>
               </div>
             </Card>
 
@@ -234,51 +369,39 @@ const OwnerPGDashboard = () => {
           </div>
         </div>
 
-        {/* Interactive Building Diagram */}
+        {/* Interactive Building Visualization */}
         <Card className="p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Building Layout</h2>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-green-500 rounded"></div>
-                <span className="text-sm">Available</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-red-500 rounded"></div>
-                <span className="text-sm">Occupied</span>
-              </div>
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Interactive Building Layout</h2>
+              <p className="text-muted-foreground">
+                {totalRooms === 0 && !buildingConfigured
+                  ? "Configure your building layout to start managing tenants visually."
+                  : "Hover over rooms to see tenant details. Click for actions."
+                }
+              </p>
             </div>
+            {totalRooms === 0 && !buildingConfigured && (
+              <Button onClick={() => setShowConfigModal(true)}>
+                <Building2 className="h-4 w-4 mr-2" />
+                Configure Layout
+              </Button>
+            )}
           </div>
-
-          {/* Room Grid by Floor */}
-          <div className="space-y-8">
-            {[3, 2, 1].map(floor => (
-              <div key={floor} className="border rounded-lg p-4">
-                <h3 className="text-lg font-semibold mb-4">Floor {floor}</h3>
-                <div className="grid grid-cols-4 gap-4">
-                  {mockRooms
-                    .filter(room => room.floor === floor)
-                    .map(room => (
-                      <div
-                        key={room.id}
-                        className={`
-                          relative p-4 rounded-lg border-2 cursor-pointer transition-all hover:scale-105
-                          ${getRoomColor(room.status)} text-white
-                        `}
-                        title={room.tenant || 'Available'}
-                      >
-                        <div className="text-center">
-                          <div className="font-bold">{room.number}</div>
-                          <div className="text-xs mt-1">
-                            {room.status === 'occupied' ? 'Occupied' : 'Available'}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            ))}
-          </div>
+          
+          {totalRooms === 0 && !buildingConfigured ? (
+            <div className="text-center py-12 border-2 border-dashed border-muted-foreground/25 rounded-lg">
+              <Building2 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Building Layout</h3>
+              <p className="text-muted-foreground mb-4">Set up floors and rooms to enable interactive management</p>
+            </div>
+          ) : buildingConfigured ? (
+            <SimpleBuildingView numFloors={numFloors} roomsPerFloor={roomsPerFloor} />
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Configure building layout to get started</p>
+            </div>
+          )}
         </Card>
 
         {/* Action Buttons */}
@@ -295,7 +418,76 @@ const OwnerPGDashboard = () => {
             <IndianRupee className="h-5 w-5 mr-2" />
             Payment History
           </Button>
+          <Button 
+            size="lg" 
+            variant="outline" 
+            onClick={() => {
+              if (totalRooms === 0) {
+                alert('Please configure building layout first');
+                return;
+              }
+              alert('Add tenant functionality - coming soon!');
+            }}
+          >
+            <UserPlus className="h-5 w-5 mr-2" />
+            Add New Tenant
+          </Button>
         </div>
+
+        {/* Building Configuration Modal */}
+        <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Configure Building Layout</DialogTitle>
+              <DialogDescription>
+                Set up the number of floors and rooms per floor for your PG.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="numFloors">Number of Floors</Label>
+                <Input
+                  id="numFloors"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={numFloors}
+                  onChange={(e) => setNumFloors(Math.max(1, parseInt(e.target.value) || 1))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="roomsPerFloor">Rooms per Floor</Label>
+                <Input
+                  id="roomsPerFloor"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={roomsPerFloor}
+                  onChange={(e) => setRoomsPerFloor(Math.max(1, parseInt(e.target.value) || 1))}
+                />
+              </div>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-2">Preview</h4>
+                <p className="text-sm text-muted-foreground mb-2">
+                  This will create {numFloors * roomsPerFloor} rooms with sample tenants for demonstration.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Room numbers: R101, R102, R201, R202, etc.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowConfigModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={createSampleRooms} disabled={creatingRooms}>
+                {creatingRooms ? 'Creating...' : 'Create Building Layout'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+
       </div>
     </div>
   );

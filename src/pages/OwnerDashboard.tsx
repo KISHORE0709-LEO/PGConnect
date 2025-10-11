@@ -13,6 +13,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 // Mock owner data
 const ownerData = {
@@ -49,6 +50,7 @@ const mockPGs = [
 
 const OwnerDashboard = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [pgs, setPgs] = useState(mockPGs);
   const [loading, setLoading] = useState(true);
 
@@ -97,12 +99,22 @@ const OwnerDashboard = () => {
       <header className="bg-card border-b sticky top-0 z-50 backdrop-blur-lg bg-card/95">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">PG<span className="text-primary">Connect</span></h1>
+            <h1 
+              className="text-2xl font-bold cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => navigate('/')}
+            >
+              PG<span className="text-primary">Connect</span>
+            </h1>
             <Badge variant="secondary">Owner Dashboard</Badge>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Welcome, {ownerData.name}</span>
-            <Button variant="outline" onClick={() => navigate('/')}>
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                await logout();
+                navigate('/');
+              }}
+            >
               Logout
             </Button>
           </div>
@@ -221,7 +233,14 @@ const OwnerDashboard = () => {
                   </div>
                 )}
 
-                <Button className="w-full" variant="outline">
+                <Button 
+                  className="w-full" 
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/manage/pg/${pg.id}`);
+                  }}
+                >
                   View Dashboard
                 </Button>
               </Card>

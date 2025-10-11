@@ -1,25 +1,27 @@
-# PG Data Import and Student Dashboard Enhancement
+# Interactive Room Management Implementation
 
 ## Steps to Complete
 
-### 1. Update Import Function
-- [x] Edit src/utils/importPGData.js: Modify importPGDataFromFile to parse specific XLSX columns (College -> nearestCollege, PGName -> name, Location -> address, Gender -> pgType, DistanceFromCollege -> distance, Room Types -> sharing, Price (_/month) -> monthlyRent, Amenities -> amenities array (split by comma), Images -> images array (split by comma)). Add defaults for missing fields (e.g., city: 'Bangalore', availableRooms: 2, rating: 4.5, ownerId: 'imported', status: 'active'). Handle parsing for numbers and arrays.
+### 1. Create Tenant Data Hook
+- [x] Create src/hooks/useTenantData.ts: Custom hook to fetch rooms/tenants from Firestore ('pgs/{pgId}/rooms'), transform to buildingData format (floors with rooms and occupants). Include loading/error states.
 
-### 2. Update Import UI
-- [x] Edit src/pages/ImportData.tsx: Add better error handling for column mismatches (e.g., check if required columns exist in sheet). Show preview of mapped data count before import. Ensure it works with the updated function.
+### 2. Update InteractiveBuildingVisualizer.tsx
+- [x] Add pgId prop and use useTenantData hook to fetch real data instead of mock.
+- [x] Enhance modal: Add "Call" button (tel: link), "Send Reminder" (placeholder for email/SMS), "Add Tenant" for empty rooms.
+- [x] Implement real actions: Update markPaymentReceived to Firestore update (set rentStatus to true).
+- [x] Add loading states and error handling for data fetch.
 
-### 3. Update Student Dashboard
-- [x] Edit src/pages/StudentDashboard.tsx:
-  - Remove mockPGs and combined array; fetch only real data from Firestore.
-  - Update fetch mapping to new fields (e.g., data.nearestCollege, data.distance, data.sharing, data.images[0] for card image).
-  - Enhance filters: Make college select dynamic (fetch unique colleges from PGs on load or hardcoded list like ['NMIT', 'RVCE', 'IISc']). Update gender to 'boys'/'girls'/'any'. Add room types filter (checkboxes for sharing options). Ensure client-side filtering aligns (e.g., filter by nearestCollege, sharing).
-  - Improve PG cards: Use real images if available, add college badge, fix navigation.
-  - Add empty results message and better error handling.
+### 3. Update OwnerPGDashboard.tsx
+- [x] Replace mock room grid with <InteractiveBuildingVisualizer pgId={pgData.id} />.
+- [x] Update room summary: Calculate occupied/available from real fetched data (occupants.length vs capacity).
+- [x] Add "Add New Tenant" button/modal for tenant management.
+- [x] Ensure no breaking changes to existing PG details display.
 
 ### 4. Testing and Followup
-- [x] Restart dev server if needed (`npm run dev`).
-- [x] Test import: Navigate to /import-data, upload XLSX (or use public/pg_list.xlsx), verify success, check Firestore 'pgs' collection for correct data.
-- [x] Test dashboard: Navigate to /student, verify PGs load, apply filters (college, price, amenities, etc.), check cards render and navigate to details without errors.
-- [x] Update TODO.md: Mark steps as completed after each.
+- [ ] Run `npm run dev`, login as owner, navigate to /owner-pg-dashboard.
+- [ ] Verify data loads, hover tooltips, modal details/actions work.
+- [ ] Test updates (mark paid), empty rooms, edge cases.
+- [ ] Deploy to Vercel, check Firestore rules for owner access.
+- [ ] Update TODO.md: Mark steps as completed after each.
 
-*Note: Assumes Firestore rules allow authenticated writes to 'pgs'. If issues, update rules in Firebase console.*
+*Note: Ensure Firestore rules allow owner reads/writes to 'pgs/{pgId}/rooms'. No new dependencies; uses existing Firebase setup.*

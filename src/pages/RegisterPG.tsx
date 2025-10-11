@@ -112,7 +112,7 @@ const RegisterPG = () => {
         drinkingAllowed: formData.drinkingAllowed,
         availability: formData.availability,
         ownerId: user.id || 'unknown',
-        ownerName: user.name || user.displayName || user.email || 'Unknown',
+        ownerName: user.name || (user as any).displayName || user.email || 'Unknown',
         ownerEmail: user.email || '',
         ownerPhone: user.phone || '',
         createdAt: new Date().toISOString(),
@@ -162,11 +162,11 @@ const RegisterPG = () => {
       }
       
       toast.success("Building configuration saved!");
-      navigate('/owner/pg/latest');
+      navigate('/owner-dashboard');
     } catch (error) {
       console.error('Error saving building config:', error);
       toast.success("Building configuration saved!");
-      navigate('/owner/pg/latest');
+      navigate('/owner-dashboard');
     }
   };
 

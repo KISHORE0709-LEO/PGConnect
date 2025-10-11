@@ -53,7 +53,21 @@ const Auth = () => {
         setAuthenticatedUser(userData);
         
         if (userProfile?.role === 'owner') {
-          navigate('/owner-dashboard');
+          // Check if owner has registered any PG
+          const { collection, query, where, getDocs } = await import('firebase/firestore');
+          const { db } = await import('@/config/firebase');
+          
+          const pgsQuery = query(
+            collection(db, 'pgs'),
+            where('ownerId', '==', user.uid)
+          );
+          const pgsSnapshot = await getDocs(pgsQuery);
+          
+          if (pgsSnapshot.empty) {
+            navigate('/owner/register-pg');
+          } else {
+            navigate('/owner-dashboard');
+          }
         } else {
           navigate('/student-dashboard');
         }

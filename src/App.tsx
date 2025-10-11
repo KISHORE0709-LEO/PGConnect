@@ -1,10 +1,12 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import Intro from "./pages/Intro";
 import Index from "./pages/Index";
 import StudentDashboard from "./pages/StudentDashboard";
 import PGDetails from "./pages/PGDetails";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import OwnerPGDashboard from "./pages/OwnerPGDashboard";
+import PGManagement from "./pages/PGManagement";
 import ImportData from "./pages/ImportData";
 import RegisterPG from "./pages/RegisterPG";
 import NotFound from "./pages/NotFound";
@@ -30,14 +32,16 @@ const App = () => (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col">
         <Routes>
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/" element={
+          <Route path="/intro" element={<Intro />} />
+          <Route path="/home" element={
             <>
               <Navbar />
               <div className="flex-1"><Index /></div>
               <Footer />
             </>
           } />
+          <Route path="/" element={<Navigate to="/intro" replace />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/student-dashboard" element={
             <>
@@ -75,6 +79,7 @@ const App = () => (
               <Footer />
             </>
           } />
+          <Route path="/manage/pg/:id" element={<PGManagement />} />
           <Route path="/how-to-book" element={
             <>
               <Navbar />

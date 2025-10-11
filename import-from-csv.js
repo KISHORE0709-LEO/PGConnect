@@ -27,7 +27,9 @@ async function importData() {
 
   console.log(`Found ${filteredData.length} PG entries to import.`);
 
-  for (const row of filteredData) {
+  for (let index = 0; index < filteredData.length; index++) {
+    const row = filteredData[index];
+    const pgId = (index + 1).toString();
     const pgData = {
       name: row['PG Name'] || '',
       description: '',
@@ -51,8 +53,9 @@ async function importData() {
     };
 
     try {
-      await addDoc(collection(db, 'pgs'), pgData);
-      console.log(`Added: ${pgData.name}`);
+      const { setDoc, doc } = await import('firebase/firestore');
+      await setDoc(doc(db, 'pgs', pgId), pgData);
+      console.log(`Added: ${pgData.name} with ID: ${pgId}`);
     } catch (error) {
       console.error(`Error adding ${pgData.name}:`, error);
     }
